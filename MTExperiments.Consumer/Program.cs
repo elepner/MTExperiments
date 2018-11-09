@@ -2,14 +2,13 @@
 using System.Threading.Tasks;
 using MassTransit;
 using MassTransit.Azure.ServiceBus.Core;
-using MassTransit.Azure.ServiceBus.Core.Configurators;
 using MassTransit.ExtensionsDependencyInjectionIntegration;
 using Messaging.Contracts;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace MTExperiments
+namespace MTExperiments.Consumer
 {
     class Program
     {
@@ -20,39 +19,52 @@ namespace MTExperiments
                     (configurationBuilder => { configurationBuilder.AddEnvironmentVariables(); }))
                 .ConfigureServices((hostingContext, serviceCollection) =>
                 {
-                    serviceCollection.AddMassTransit();
+                    serviceCollection.AddMassTransit(mt =>
+                    {
+                        mt.AddConsumer<ChangeCaseHandler>();
+                    });
                     serviceCollection.AddSingleton(provider => Bus.Factory.CreateUsingAzureServiceBus(cfg =>
                     {
                         string busConnectionString = hostingContext.Configuration["MY_TEST_ASB"];
 
                         var host = cfg.Host(busConnectionString, hostConfiguration => { });
-                        var commandEndpoint = $"{host.Address}{typeof(ChangeCaseCommand).FullName.ToLower().Replace(".","_")}";
-                        EndpointConvention.Map<ChangeCaseCommand>(new Uri(commandEndpoint));
                     }));
-
-                    serviceCollection.AddSingleton<IPublishEndpoint>(provider => provider.GetService<IBusControl>());
-                    serviceCollection.AddSingleton<ISendEndpointProvider>(provider => provider.GetService<IBusControl>());
                 });
-            
+
             //var busControl = Bus.Factory.CreateUsingAzureServiceBus(cfg =>
             //{
             //    var host = cfg.Host(builder.)
             //});
-            var config = builder.Build();
-            var sendEndpointProvider = config.Services.GetService<ISendEndpointProvider>();
-            var busControl = config.Services.GetService<IBusControl>();
-            await busControl.StartAsync();
-            Console.WriteLine("Enter ';' if you want to finish");
-            while (true)
-            {
-                var line = Console.ReadLine();
-                if (line == ";") return;
 
-                await sendEndpointProvider.Send<ChangeCaseCommand>(new ChangeCaseCommandImpl
+            await builder.RunConsoleAsync();
+        }
+
+    }
+
+    public class ChangeCaseHandler : IConsumer<ChangeCaseCommand>
+    {
+        public Task Consume(ConsumeContext<ChangeCaseCommand> context)
+        {
+            string message = context.Message.Message;
+            foreach (char c in message)
+            {
+                Char toPrint;
+                if (Char.IsUpper(c))
                 {
-                    Message = line
-                });
+                    toPrint = Char.ToLower(c);
+                }
+                else if (Char.IsLower(c))
+                {
+                    toPrint = Char.ToUpper(c);
+                }
+                else
+                {
+                    toPrint = c;
+                }
+
+                Console.Write(toPrint);
             }
+            return Task.CompletedTask;
         }
     }
 }
