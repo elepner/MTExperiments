@@ -8,6 +8,7 @@ using Messaging.Contracts;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using MTUtils;
 
 namespace MTExperiments
 {
@@ -26,8 +27,7 @@ namespace MTExperiments
                         string busConnectionString = hostingContext.Configuration["MY_TEST_ASB"];
 
                         var host = cfg.Host(busConnectionString, hostConfiguration => { });
-                        var commandEndpoint = $"{host.Address}{typeof(ChangeCaseCommand).FullName.ToLower().Replace(".","_")}";
-                        EndpointConvention.Map<ChangeCaseCommand>(new Uri(commandEndpoint));
+                        host.CreateConventionalCommandMapping<ChangeCaseCommand>();
                     }));
 
                     serviceCollection.AddSingleton<IPublishEndpoint>(provider => provider.GetService<IBusControl>());

@@ -15,5 +15,6 @@
 </ItemGroup>
 <ItemGroup>
   <ProjectReference Include="..\Messaging.Contracts\Messaging.Contracts.csproj" />
+  <ProjectReference Include="..\MTUtils\MTUtils.csproj" />
 </ItemGroup>
 </Project>

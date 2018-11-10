@@ -7,6 +7,7 @@ using Messaging.Contracts;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using MTUtils;
 
 namespace MTExperiments.Consumer
 {
@@ -28,6 +29,8 @@ namespace MTExperiments.Consumer
                         string busConnectionString = hostingContext.Configuration["MY_TEST_ASB"];
 
                         var host = cfg.Host(busConnectionString, hostConfiguration => { });
+
+                        cfg.CreateConventionalCommandEndpoint<ChangeCaseCommand>(host, (configurator => { }));
                     }));
                 });
 
