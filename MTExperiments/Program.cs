@@ -50,7 +50,7 @@ namespace MTExperiments
 
                 await sendEndpointProvider.Send<ChangeCaseCommand>(new ChangeCaseCommandImpl
                 {
-                    Message = line
+                    Text = line
                 });
             }
         }

@@ -5,11 +5,11 @@ namespace Messaging.Contracts
 
     public interface ChangeCaseCommand
     {
-        string Message { get; set; }
+        string Text { get; set; }
     }
 
     public class ChangeCaseCommandImpl : ChangeCaseCommand
     {
-        public string Message { get; set; }
+        public string Text { get; set; }
     }
 }

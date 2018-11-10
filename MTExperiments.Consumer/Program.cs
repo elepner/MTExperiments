@@ -20,26 +20,32 @@ namespace MTExperiments.Consumer
                     (configurationBuilder => { configurationBuilder.AddEnvironmentVariables(); }))
                 .ConfigureServices((hostingContext, serviceCollection) =>
                 {
-                    serviceCollection.AddMassTransit(mt =>
-                    {
-                        mt.AddConsumer<ChangeCaseHandler>();
-                    });
+                    serviceCollection.AddTransient<ChangeCaseHandler>();
+                    serviceCollection.AddMassTransit(mt => { mt.AddConsumer<ChangeCaseHandler>(); });
+
                     serviceCollection.AddSingleton(provider => Bus.Factory.CreateUsingAzureServiceBus(cfg =>
                     {
                         string busConnectionString = hostingContext.Configuration["MY_TEST_ASB"];
 
                         var host = cfg.Host(busConnectionString, hostConfiguration => { });
 
-                        cfg.CreateConventionalCommandEndpoint<ChangeCaseCommand>(host, (configurator => { }));
+                        cfg.CreateConventionalCommandEndpoint<ChangeCaseCommand>(host,
+                            (configurator =>
+                            {
+                                configurator.Consumer<ChangeCaseHandler>(provider);
+                                
+                            }));
+
+
                     }));
                 });
 
-            //var busControl = Bus.Factory.CreateUsingAzureServiceBus(cfg =>
-            //{
-            //    var host = cfg.Host(builder.)
-            //});
 
-            await builder.RunConsoleAsync();
+            var runtime = builder.Build();
+            await runtime.Services.GetService<IBusControl>().StartAsync();
+            var handler = runtime.Services.GetService<ChangeCaseHandler>();
+            await runtime.StartAsync();
+            //await builder.RunConsoleAsync();
         }
 
     }
@@ -48,7 +54,7 @@ namespace MTExperiments.Consumer
     {
         public Task Consume(ConsumeContext<ChangeCaseCommand> context)
         {
-            string message = context.Message.Message;
+            string message = context.Message.Text;
             foreach (char c in message)
             {
                 Char toPrint;
@@ -67,6 +73,7 @@ namespace MTExperiments.Consumer
 
                 Console.Write(toPrint);
             }
+            Console.WriteLine();
             return Task.CompletedTask;
         }
     }

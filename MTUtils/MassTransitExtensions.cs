@@ -13,10 +13,10 @@ namespace MTUtils
 
         public static void CreateConventionalCommandEndpoint<TMessage>(
             this IServiceBusBusFactoryConfigurator configurator, IServiceBusHost host,
-            Action<IServiceBusReceiveEndpointConfigurator> configure) where TMessage : class
+            Action<IReceiveEndpointConfigurator> configure) where TMessage : class
         {
-            string queueAddress = BuildConventionalAddress<TMessage>(host.Address.ToString());
-            configurator.ReceiveEndpoint(host, queueAddress, configure);
+            configurator.ReceiveEndpoint(typeof(TMessage).FullName.ToLower().Replace(".", "_"), configure);
+            
         }
 
         public static void CreateConventionalCommandMapping<TMessage>(this IServiceBusHost host) where TMessage : class
