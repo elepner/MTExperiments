@@ -7,4 +7,9 @@
         <PackageReference Include="MassTransit" Version="5.1.5" />
         <PackageReference Include="MassTransit.Azure.ServiceBus.Core" Version="5.1.5" />
     </ItemGroup>
+    <ItemGroup>
+      <Reference Include="MassTransit.Extensions.DependencyInjectionIntegration">
+        <HintPath>..\..\..\..\..\.nuget\packages\masstransit.extensions.dependencyinjection\5.1.5\lib\netstandard2.0\MassTransit.Extensions.DependencyInjectionIntegration.dll</HintPath>
+      </Reference>
+    </ItemGroup>
 </Project>

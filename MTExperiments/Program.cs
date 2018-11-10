@@ -28,6 +28,7 @@ namespace MTExperiments
 
                         var host = cfg.Host(busConnectionString, hostConfiguration => { });
                         host.CreateConventionalCommandMapping<ChangeCaseCommand>();
+                        host.CreateConventionalCommandMapping<TerminateCommand>();
                     }));
 
                     serviceCollection.AddSingleton<IPublishEndpoint>(provider => provider.GetService<IBusControl>());
@@ -46,7 +47,11 @@ namespace MTExperiments
             while (true)
             {
                 var line = Console.ReadLine();
-                if (line == ";") return;
+                if (line == ";")
+                {
+                    await sendEndpointProvider.Send<TerminateCommand>(new object());
+                    return;
+                }
 
                 await sendEndpointProvider.Send<ChangeCaseCommand>(new ChangeCaseCommandImpl
                 {

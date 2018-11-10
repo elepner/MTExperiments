@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using MassTransit;
 using MassTransit.Azure.ServiceBus.Core;
@@ -7,74 +8,66 @@ using Messaging.Contracts;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Hosting.Internal;
 using MTUtils;
+using IHost = Microsoft.Extensions.Hosting.IHost;
 
 namespace MTExperiments.Consumer
 {
-    class Program
+    public class Program
     {
-        static async Task Main(string[] args)
+        public static TaskCompletionSource<int> TaskCompletionSource = new TaskCompletionSource<int>();
+        static void Main(string[] args)
         {
             var builder = new HostBuilder()
                 .ConfigureAppConfiguration(
                     (configurationBuilder => { configurationBuilder.AddEnvironmentVariables(); }))
                 .ConfigureServices((hostingContext, serviceCollection) =>
                 {
-                    serviceCollection.AddTransient<ChangeCaseHandler>();
-                    serviceCollection.AddMassTransit(mt => { mt.AddConsumer<ChangeCaseHandler>(); });
+                    serviceCollection.AddTransient<ChangeCaseCommandHandler>();
+                    serviceCollection.AddTransient<TerminateCommandHandler>();
+
+                    serviceCollection.AddMassTransit(mt => { mt.AddConsumer<ChangeCaseCommandHandler>(); });
 
                     serviceCollection.AddSingleton(provider => Bus.Factory.CreateUsingAzureServiceBus(cfg =>
                     {
                         string busConnectionString = hostingContext.Configuration["MY_TEST_ASB"];
 
                         var host = cfg.Host(busConnectionString, hostConfiguration => { });
-
-                        cfg.CreateConventionalCommandEndpoint<ChangeCaseCommand>(host,
-                            (configurator =>
-                            {
-                                configurator.Consumer<ChangeCaseHandler>(provider);
-                                
-                            }));
-
-
+                        
+                        cfg.CreateConventionalCommandHandlerEndpoint<ChangeCaseCommandHandler, ChangeCaseCommand>(provider);
+                        cfg.CreateConventionalCommandHandlerEndpoint<TerminateCommandHandler, TerminateCommand>(provider);
                     }));
                 });
 
 
-            var runtime = builder.Build();
-            await runtime.Services.GetService<IBusControl>().StartAsync();
-            var handler = runtime.Services.GetService<ChangeCaseHandler>();
-            await runtime.StartAsync();
-            //await builder.RunConsoleAsync();
+            var runtime = builder.UseConsoleLifetime().Build();
+            var bus = runtime.Services.GetService<IBusControl>();
+            bus.Start();
+            runtime.Start();
+            Task.WaitAny(TaskCompletionSource.Task);
+            bus.Stop();
+            runtime.StopAsync(TimeSpan.FromSeconds(1)).Wait();
+            //The app still doesn't stop even if I stop everything that I could. Some spawned processes are still hanging.
+            //Environment.Exit(0);
+            throw new Exception();
         }
 
     }
 
-    public class ChangeCaseHandler : IConsumer<ChangeCaseCommand>
+    public class TerminateCommandHandler : IConsumer<TerminateCommand>
     {
-        public Task Consume(ConsumeContext<ChangeCaseCommand> context)
-        {
-            string message = context.Message.Text;
-            foreach (char c in message)
-            {
-                Char toPrint;
-                if (Char.IsUpper(c))
-                {
-                    toPrint = Char.ToLower(c);
-                }
-                else if (Char.IsLower(c))
-                {
-                    toPrint = Char.ToUpper(c);
-                }
-                else
-                {
-                    toPrint = c;
-                }
+        private readonly IHostLifetime _hostLifetime;
 
-                Console.Write(toPrint);
-            }
-            Console.WriteLine();
-            return Task.CompletedTask;
+
+        public TerminateCommandHandler(IHostLifetime hostLifetime)
+        {
+            _hostLifetime = hostLifetime;
+        }
+        public async Task Consume(ConsumeContext<TerminateCommand> context)
+        {
+            await _hostLifetime.StopAsync(CancellationToken.None);
+            Program.TaskCompletionSource.SetResult(1);
         }
     }
 }
