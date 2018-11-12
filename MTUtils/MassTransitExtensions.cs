@@ -18,11 +18,12 @@ namespace MTUtils
             configurator.ReceiveEndpoint(typeof(TMessage).FullName.ToLower().Replace(".", "_"), configure);
         }
 
-        public static void CreateConventionalCommandHandlerEndpoint<TConsumer, TMessage>(this IBusFactoryConfigurator cfg, IServiceProvider provider) where TMessage : class where TConsumer : class, IConsumer<TMessage>
+        public static void CreateConventionalCommandHandlerEndpoint<TConsumer, TMessage>(this IBusFactoryConfigurator cfg,IServiceProvider provider) where TMessage : class where TConsumer : class, IConsumer<TMessage>
         {
             cfg.ReceiveEndpoint(typeof(TMessage).FullName.ToLower().Replace(".", "_"),
                 configurator =>
                 {
+                    
                     configurator.Consumer<TConsumer>(provider);
                 });
         }
