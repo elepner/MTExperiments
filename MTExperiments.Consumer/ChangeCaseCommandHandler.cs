@@ -7,29 +7,40 @@ namespace MTExperiments.Consumer
 {
     public class ChangeCaseCommandHandler : IConsumer<ChangeCaseCommand>
     {
-        public Task Consume(ConsumeContext<ChangeCaseCommand> context)
+        public async Task Consume(ConsumeContext<ChangeCaseCommand> context)
         {
             string message = context.Message.Text;
+            string result = "";
             foreach (char c in message)
             {
-                char toPrint;
+                char changedCase;
                 if (char.IsUpper(c))
                 {
-                    toPrint = char.ToLower(c);
+                    changedCase = char.ToLower(c);
                 }
                 else if (char.IsLower(c))
                 {
-                    toPrint = char.ToUpper(c);
+                    changedCase = char.ToUpper(c);
                 }
                 else
                 {
-                    toPrint = c;
+                    changedCase = c;
                 }
 
-                Console.Write(toPrint);
+                result += changedCase;
+                //Console.Write(toPrint);
             }
-            Console.WriteLine();
-            return Task.CompletedTask;
+            Console.WriteLine(result);
+
+            await context.Publish<AnotherThingHappened>(new AnotherThing
+            {
+                AnotherThingType = $"Changed case from {context.Message.Text} to {result}"
+            });
         }
+    }
+
+    class AnotherThing : AnotherThingHappened
+    {
+        public string AnotherThingType { get; set; }
     }
 }
