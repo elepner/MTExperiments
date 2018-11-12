@@ -35,12 +35,9 @@ namespace MTExperiments
                     serviceCollection.AddSingleton<ISendEndpointProvider>(provider => provider.GetService<IBusControl>());
                 });
             
-            //var busControl = Bus.Factory.CreateUsingAzureServiceBus(cfg =>
-            //{
-            //    var host = cfg.Host(builder.)
-            //});
             var config = builder.Build();
             var sendEndpointProvider = config.Services.GetService<ISendEndpointProvider>();
+            var publishEndpoint = config.Services.GetService<IPublishEndpoint>();
             var busControl = config.Services.GetService<IBusControl>();
             await busControl.StartAsync();
             Console.WriteLine("Enter ';' if you want to finish");
@@ -53,11 +50,45 @@ namespace MTExperiments
                     return;
                 }
 
+                if (line.ToLower() == "a")
+                {
+                    await publishEndpoint.Publish<ObjectCreatedA>(new ObjectA()
+                    {
+                        A = "Value A",
+                        SomeValue = "Some value from A"
+                    });
+                    continue;
+                }
+
+                if (line.ToLower() == "b")
+                {
+                    await publishEndpoint.Publish<ObjectCreatedB>(new ObjectB()
+                    {
+                        B = "Value B",
+                        SomeValue = "Some value from B"
+                    });
+                    continue;
+                }
+
                 await sendEndpointProvider.Send<ChangeCaseCommand>(new ChangeCaseCommandImpl
                 {
                     Text = line
                 });
             }
         }
+    }
+
+    class ObjectA : ObjectCreatedA
+    {
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+        public string SomeValue { get; set; }
+        public string A { get; set; }
+    }
+
+    class ObjectB : ObjectCreatedB
+    {
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+        public string SomeValue { get; set; }
+        public string B { get; set; }
     }
 }

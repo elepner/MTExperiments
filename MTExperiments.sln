@@ -5,11 +5,11 @@ VisualStudioVersion = 15.0.27703.2042
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MTExperiments", "MTExperiments\MTExperiments.csproj", "{E00F8FE0-25DB-405C-B509-C6ABC05A22E4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Messaging.Contracts", "Messaging.Contracts\Messaging.Contracts.csproj", "{B829D38C-D0C1-43BE-8B0D-992B43A85923}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Messaging.Contracts", "Messaging.Contracts\Messaging.Contracts.csproj", "{B829D38C-D0C1-43BE-8B0D-992B43A85923}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MTExperiments.Consumer", "MTExperiments.Consumer\MTExperiments.Consumer.csproj", "{E02F8323-596D-4A52-BD0F-50CDBF1B5978}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MTExperiments.Consumer", "MTExperiments.Consumer\MTExperiments.Consumer.csproj", "{E02F8323-596D-4A52-BD0F-50CDBF1B5978}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MTUtils", "MTUtils\MTUtils.csproj", "{01A79EC1-231F-49EF-AE65-8484CBFE9A67}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MTUtils", "MTUtils\MTUtils.csproj", "{01A79EC1-231F-49EF-AE65-8484CBFE9A67}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
