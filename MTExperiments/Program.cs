@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
+using GreenPipes;
+using GreenPipes.Agents;
 using MassTransit;
 using MassTransit.Azure.ServiceBus.Core;
 using MassTransit.Azure.ServiceBus.Core.Configurators;
@@ -70,11 +72,26 @@ namespace MTExperiments
                     continue;
                 }
 
-                await sendEndpointProvider.Send<ChangeCaseCommand>(new ChangeCaseCommandImpl
-                {
-                    Text = line
-                });
+                await sendEndpointProvider.Send<ChangeCaseCommand>(
+                    new ChangeCaseCommandImpl
+                    {
+                        Text = line
+                    }, new SendPipe());
             }
+        }
+    }
+
+    class SendPipe : IPipe<SendContext>
+    {
+        public Task Send(SendContext context)
+        {
+            context.Headers.Set("tenant", "Hello world");
+            return Task.CompletedTask;
+        }
+
+        public void Probe(ProbeContext context)
+        {
+            
         }
     }
 

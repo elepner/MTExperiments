@@ -28,6 +28,8 @@ namespace MTExperiments.AnotherConsumer
                         {
                             configurator.Handler<AnotherThingHappened>(context =>
                             {
+                                context.Headers.TryGetHeader("tenant", out var tenantId);
+                                System.Console.Write(tenantId);
                                 System.Console.WriteLine(context.Message.AnotherThingType);
                                 return Task.CompletedTask;
                             });

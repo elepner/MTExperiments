@@ -1,4 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using GreenPipes;
 using MassTransit;
 
 
@@ -25,6 +29,17 @@ namespace MTUtils
                 {
                     
                     configurator.Consumer<TConsumer>(provider);
+                    configurator.ConfigurePublish(pipeConfigurator =>
+                    {
+                        
+                        pipeConfigurator.UseSendExecute(context =>
+                        {
+                            var consumeContext = context.GetPayload<ConsumeContext>();
+                            context.TransferConsumeContextHeaders(consumeContext);
+                        });
+                    });
+
+                    
                 });
         }
 
@@ -34,6 +49,33 @@ namespace MTUtils
         {
             var commandEndpoint = BuildConventionalAddress<TMessage>(host.Address.ToString());
             EndpointConvention.Map<TMessage>(new Uri(commandEndpoint));
+        }
+    }
+
+    class CopyStuff : IPipeSpecification<SendContext>
+    {
+        public void Apply(IPipeBuilder<SendContext> builder)
+        {
+            builder.AddFilter(new StuffFilter());
+        }
+
+        public IEnumerable<ValidationResult> Validate()
+        {
+            return Enumerable.Empty<ValidationResult>();
+        }
+    }
+
+    class StuffFilter : IFilter<SendContext>
+    {
+        public Task Send(SendContext context, IPipe<SendContext> next)
+        {
+            //context.TransferConsumeContextHeaders();
+            return Task.CompletedTask;
+        }
+
+        public void Probe(ProbeContext context)
+        {
+            
         }
     }
 }
