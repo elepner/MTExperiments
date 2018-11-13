@@ -34,8 +34,10 @@ namespace MTUtils
                         
                         pipeConfigurator.UseSendExecute(context =>
                         {
-                            var consumeContext = context.GetPayload<ConsumeContext>();
-                            context.TransferConsumeContextHeaders(consumeContext);
+                            if (context.TryGetPayload(out ConsumeContext consumeContext))
+                            {
+                                context.TransferConsumeContextHeaders(consumeContext);
+                            }
                         });
                     });
 
