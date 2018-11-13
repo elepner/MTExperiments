@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using GreenPipes;
+using GreenPipes.Specifications;
 using MassTransit;
 
 
@@ -10,6 +11,8 @@ namespace MTUtils
 {
     public static class MassTransitExtensions
     {
+        public const string TENANT_ID_KEY = "TenantId";
+
         public static string BuildConventionalAddress<TMessage>(string hostName)
         {
             return $"{hostName}{typeof(TMessage).FullName.ToLower().Replace(".", "_")}";
@@ -27,21 +30,7 @@ namespace MTUtils
             cfg.ReceiveEndpoint(typeof(TMessage).FullName.ToLower().Replace(".", "_"),
                 configurator =>
                 {
-                    
                     configurator.Consumer<TConsumer>(provider);
-                    configurator.ConfigurePublish(pipeConfigurator =>
-                    {
-                        
-                        pipeConfigurator.UseSendExecute(context =>
-                        {
-                            if (context.TryGetPayload(out ConsumeContext consumeContext))
-                            {
-                                context.TransferConsumeContextHeaders(consumeContext);
-                            }
-                        });
-                    });
-
-                    
                 });
         }
 
@@ -49,6 +38,31 @@ namespace MTUtils
         {
             var commandEndpoint = BuildConventionalAddress<TMessage>(host.Address.ToString());
             EndpointConvention.Map<TMessage>(new Uri(commandEndpoint));
+        }
+
+        public static void ConfigureExtraHeadersCopying(this IBusFactoryConfigurator cfg)
+        {
+            cfg.ConfigureSend(configurator =>
+            {
+                configurator.UseSendExecute(context =>
+                {
+                    if (context.TryGetPayload(out ConsumeContext consumeContext))
+                    {
+                        context.TransferConsumeContextHeaders(consumeContext);
+                    }
+                });
+            });
+
+            cfg.ConfigurePublish(configurator =>
+            {
+                configurator.UseSendExecute(context =>
+                {
+                    if (context.TryGetPayload(out ConsumeContext consumeContext))
+                    {
+                        context.TransferConsumeContextHeaders(consumeContext);
+                    }
+                });
+            });
         }
     }
 }

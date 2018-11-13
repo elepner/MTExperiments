@@ -16,6 +16,7 @@ namespace MTExperiments
 {
     class Program
     {
+        public const string TenantId = "Some_test_tenant_id";
         static async Task Main(string[] args)
         {
             var builder = new HostBuilder()
@@ -31,12 +32,29 @@ namespace MTExperiments
                         var host = cfg.Host(busConnectionString, hostConfiguration => { });
                         host.CreateConventionalCommandMapping<ChangeCaseCommand>();
                         host.CreateConventionalCommandMapping<TerminateCommand>();
+                        cfg.ConfigurePublish(configurator =>
+                        {
+                            configurator.UseSendExecute(context =>
+                            {
+                                context.Headers.Set(MassTransitExtensions.TENANT_ID_KEY, TenantId);
+                            });
+                        });
+
+                        cfg.ConfigureSend(configurator =>
+                        {
+                            configurator.UseSendExecute(context =>
+                            {
+                                context.Headers.Set(MassTransitExtensions.TENANT_ID_KEY, TenantId);
+                            });
+                        });
                     }));
 
                     serviceCollection.AddSingleton<IPublishEndpoint>(provider => provider.GetService<IBusControl>());
                     serviceCollection.AddSingleton<ISendEndpointProvider>(provider => provider.GetService<IBusControl>());
                 });
             
+
+
             var config = builder.Build();
             var sendEndpointProvider = config.Services.GetService<ISendEndpointProvider>();
             var publishEndpoint = config.Services.GetService<IPublishEndpoint>();
@@ -76,24 +94,11 @@ namespace MTExperiments
                     new ChangeCaseCommandImpl
                     {
                         Text = line
-                    }, new SendPipe());
+                    });
             }
         }
     }
-
-    class SendPipe : IPipe<SendContext>
-    {
-        public Task Send(SendContext context)
-        {
-            context.Headers.Set("tenant", "Hello world");
-            return Task.CompletedTask;
-        }
-
-        public void Probe(ProbeContext context)
-        {
-            
-        }
-    }
+    
 
     class ObjectA : ObjectCreatedA
     {

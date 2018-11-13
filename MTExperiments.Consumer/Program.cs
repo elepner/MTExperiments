@@ -26,7 +26,7 @@ namespace MTExperiments.Consumer
                     serviceCollection.AddTransient<GenericConsumer>();
                     serviceCollection.AddMassTransit(mt => { mt.AddConsumer<ChangeCaseCommandHandler>(); });
 
-                    serviceCollection.AddSingleton(provider => Bus.Factory.CreateUsingAzureServiceBus(cfg =>
+                    serviceCollection.AddSingleton(provider => Bus.Factory.CreateUsingAzureServiceBus(cfg=>
                     {
                         string busConnectionString = hostingContext.Configuration["MY_TEST_ASB"];
 
@@ -34,7 +34,9 @@ namespace MTExperiments.Consumer
                         
                         cfg.CreateConventionalCommandHandlerEndpoint<ChangeCaseCommandHandler, ChangeCaseCommand>(provider);
                         cfg.CreateConventionalCommandHandlerEndpoint<TerminateCommandHandler, TerminateCommand>(provider);
-                        
+                        host.CreateConventionalCommandMapping<DoAnotherThingCommand>();
+                        cfg.ConfigureExtraHeadersCopying();
+
                         string topicTpl = "Messaging.Contracts/ObjectCreated";
                         
 
@@ -60,11 +62,14 @@ namespace MTExperiments.Consumer
 
     public class GenericConsumer : IConsumer<ObjectCreated>
     {
-        public Task Consume(ConsumeContext<ObjectCreated> context)
+        public async Task Consume(ConsumeContext<ObjectCreated> context)
         {
             Console.WriteLine("Recieved object:");
             Console.WriteLine(context.Message.Id);
-            return Task.CompletedTask;
+            await context.Send<DoAnotherThingCommand>(new
+            {
+                ThingType = context.Message.SomeValue
+            });
         }
     }
 }
