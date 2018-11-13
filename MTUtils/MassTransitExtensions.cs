@@ -45,39 +45,10 @@ namespace MTUtils
                 });
         }
 
-        
-
         public static void CreateConventionalCommandMapping<TMessage>(this IHost host) where TMessage : class
         {
             var commandEndpoint = BuildConventionalAddress<TMessage>(host.Address.ToString());
             EndpointConvention.Map<TMessage>(new Uri(commandEndpoint));
-        }
-    }
-
-    class CopyStuff : IPipeSpecification<SendContext>
-    {
-        public void Apply(IPipeBuilder<SendContext> builder)
-        {
-            builder.AddFilter(new StuffFilter());
-        }
-
-        public IEnumerable<ValidationResult> Validate()
-        {
-            return Enumerable.Empty<ValidationResult>();
-        }
-    }
-
-    class StuffFilter : IFilter<SendContext>
-    {
-        public Task Send(SendContext context, IPipe<SendContext> next)
-        {
-            //context.TransferConsumeContextHeaders();
-            return Task.CompletedTask;
-        }
-
-        public void Probe(ProbeContext context)
-        {
-            
         }
     }
 }
