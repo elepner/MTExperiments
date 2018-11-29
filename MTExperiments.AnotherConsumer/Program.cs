@@ -61,8 +61,11 @@ namespace MTExperiments.AnotherConsumer
             {
                 configurator.Consumer<ObjectACreatedEventHandler>();
             });
-            
-            cfg.ReceiveEndpoint(host, "AnotherSubscirber2", configurator =>
+
+            cfg.SubscriptionEndpoint<ObjectCreatedB>(host, subsriberName,
+                configurator => { configurator.Consumer<ObjectBCreatedEventHandler>(); });
+
+            cfg.ReceiveEndpoint(host, queueName: "AnotherSubscirber2", configure: configurator =>
             {
                 configurator.Handler<ObjectCreatedB>(context =>
                 {
@@ -75,6 +78,15 @@ namespace MTExperiments.AnotherConsumer
 
         }
 
+    }
+
+    internal class ObjectBCreatedEventHandler : IConsumer<ObjectCreatedB>
+    {
+        public Task Consume(ConsumeContext<ObjectCreatedB> context)
+        {
+            Console.WriteLine("Object B Created. Another subscriber, Subscription endpoint");
+            return Task.CompletedTask;
+        }
     }
 
     internal class ObjectACreatedEventHandler : IConsumer<ObjectCreatedA>
