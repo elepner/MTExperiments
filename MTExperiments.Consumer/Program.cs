@@ -38,15 +38,17 @@ namespace MTExperiments.Consumer
                         cfg.ConfigureExtraHeadersCopying();
 
                         string topicTpl = "Messaging.Contracts/ObjectCreated";
-                        
 
-                        foreach(string topic in new[] { "A", "B" })
+                        
+                        cfg.SubscriptionEndpoint<ObjectCreatedA>(host, "ConsumerApp", configurator =>
                         {
-                            cfg.SubscriptionEndpoint(host, "ConsumerApp", topicTpl + topic, configurator =>
-                            {
-                                configurator.Consumer<GenericConsumer>();
-                            });
-                        }
+                            configurator.Consumer<GenericConsumer>();
+                        });
+
+                        cfg.SubscriptionEndpoint<ObjectCreatedB>(host, "ConsumerApp", configurator =>
+                        {
+                            configurator.Consumer<GenericConsumer>();
+                        });
                     }));
                 });
 
@@ -62,6 +64,7 @@ namespace MTExperiments.Consumer
 
     public class GenericConsumer : IConsumer<ObjectCreated>
     {
+        private static int Count = 0;
         public async Task Consume(ConsumeContext<ObjectCreated> context)
         {
             Console.WriteLine("Recieved object:");
@@ -71,5 +74,20 @@ namespace MTExperiments.Consumer
                 ThingType = context.Message.SomeValue
             });
         }
+    }
+
+    public class ConsumerA : IConsumer<ObjectCreatedA>
+    {
+        public async Task Consume(ConsumeContext<ObjectCreatedA> context)
+        {
+            Console.WriteLine("Recieved object A:");
+            Console.WriteLine(context.Message.Id);
+            
+            await context.Send<DoAnotherThingCommand>(new
+            {
+                ThingType = context.Message.SomeValue
+            });
+        }
+        
     }
 }

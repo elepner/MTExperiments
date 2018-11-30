@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using GreenPipes;
 using MassTransit;
 using MassTransit.Azure.ServiceBus.Core;
 using Messaging.Contracts;
@@ -46,8 +47,6 @@ namespace MTExperiments.AnotherConsumer
             {
                 configurator.Handler<AnotherThingHappened>(context =>
                 {
-                    context.Headers.TryGetHeader(MassTransitExtensions.TENANT_ID_KEY, out var tenantId);
-                    Console.Write(tenantId);
                     Console.WriteLine(context.Message.AnotherThingType);
                     if (Random.NextDouble() < 0.1)
                     {
@@ -55,16 +54,15 @@ namespace MTExperiments.AnotherConsumer
                     }
                     return Task.CompletedTask;
                 });
-            });
 
+                
+            });
+            
             cfg.SubscriptionEndpoint<ObjectCreatedA>(host, subsriberName, configurator =>
             {
                 configurator.Consumer<ObjectACreatedEventHandler>();
             });
-
-            cfg.SubscriptionEndpoint<ObjectCreatedB>(host, subsriberName,
-                configurator => { configurator.Consumer<ObjectBCreatedEventHandler>(); });
-
+            
             cfg.ReceiveEndpoint(host, queueName: "AnotherSubscirber2", configure: configurator =>
             {
                 configurator.Handler<ObjectCreatedB>(context =>

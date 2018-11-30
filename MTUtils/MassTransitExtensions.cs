@@ -13,9 +13,14 @@ namespace MTUtils
     {
         public const string TENANT_ID_KEY = "TenantId";
 
+        private static string CombineCommandPath(Type commandType)
+        {
+            return $"{commandType.Namespace.Replace(".", "_")}/{commandType.Name.Replace(".", "_")}";
+        }
+
         public static string BuildConventionalAddress<TMessage>(string hostName)
         {
-            return $"{hostName}{typeof(TMessage).FullName.ToLower().Replace(".", "_")}";
+            return $"{hostName}{CombineCommandPath(typeof(TMessage))}";
         }
 
         public static void CreateConventionalCommandHandlerEndpoint<TMessage>(
@@ -27,7 +32,7 @@ namespace MTUtils
 
         public static void CreateConventionalCommandHandlerEndpoint<TConsumer, TMessage>(this IBusFactoryConfigurator cfg,IServiceProvider provider) where TMessage : class where TConsumer : class, IConsumer<TMessage>
         {
-            cfg.ReceiveEndpoint(typeof(TMessage).FullName.ToLower().Replace(".", "_"),
+            cfg.ReceiveEndpoint(CombineCommandPath(typeof(TMessage)),
                 configurator =>
                 {
                     configurator.Consumer<TConsumer>(provider);

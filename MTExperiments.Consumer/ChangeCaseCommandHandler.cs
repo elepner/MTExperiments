@@ -7,8 +7,15 @@ namespace MTExperiments.Consumer
 {
     public class ChangeCaseCommandHandler : IConsumer<ChangeCaseCommand>
     {
+        private static int Count = 0;
+
         public async Task Consume(ConsumeContext<ChangeCaseCommand> context)
         {
+            if (Count++ % 4 == 0)
+            {
+                throw new Exception("Cannot change case so often!!");
+            }
+
             string message = context.Message.Text;
             string result = "";
             foreach (char c in message)
