@@ -21,18 +21,21 @@ namespace MTExperiments.AnotherConsumer
                     (configurationBuilder => { configurationBuilder.AddEnvironmentVariables(); }))
                 .ConfigureServices((hostingContext, serviceCollection) =>
                 {
+                    
                     serviceCollection.AddTransient<DoAnotherThingCommandHandler>();
                     serviceCollection.AddSingleton(provider => Bus.Factory.CreateUsingAzureServiceBus(cfg =>
                     {
                         string busConnectionString = hostingContext.Configuration["MY_TEST_ASB"];
-
-                        var host = cfg.Host(busConnectionString, hostConfiguration => { });
                         
+                        var host = cfg.Host(busConnectionString, hostConfiguration => { });
+                        host.CreateConventionalCommandMapping<ScheduledCommand>();
+                        cfg.UseServiceBusMessageScheduler();
                         ConfigureBusEndpoints(cfg, provider, host);
                         
                     }));
                 });
 
+            
 
             var runtime = builder.UseConsoleLifetime().Build();
             var bus = runtime.Services.GetService<IBusControl>();
@@ -68,9 +71,22 @@ namespace MTExperiments.AnotherConsumer
                 configurator.Handler<ObjectCreatedB>(context =>
                 {
                     Console.WriteLine("Another subscirber, object b created");
+                    context.SchedulePublish<ScheduledCommand>(TimeSpan.FromSeconds(30), new ScheduledCommandImpl
+                    {
+                        ExecutedIn = 30, IsReallyScheduled = true
+                    });
+
+                    
                     return Task.CompletedTask;
                 });
             });
+
+            //cfg.ReceiveEndpoint(host, "ScheduledCommand", configurator =>
+            //{
+            //    configurator.Consumer<ExecuteActivityCommandHandler>();
+            //});
+
+            
 
             cfg.CreateConventionalCommandHandlerEndpoint<DoAnotherThingCommandHandler, DoAnotherThingCommand>(provider);
 
@@ -105,6 +121,15 @@ namespace MTExperiments.AnotherConsumer
         public Task Consume(ConsumeContext<DoAnotherThingCommand> context)
         {
             System.Console.WriteLine($"I'm doing another thing because I received command: {context.Message.ThingType}. In Tenant from header: {context.Headers.Get<string>(MassTransitExtensions.TENANT_ID_KEY)}");
+            return Task.CompletedTask;
+        }
+    }
+
+    class ExecuteActivityCommandHandler : IConsumer<ExecuteActivity>
+    {
+        public Task Consume(ConsumeContext<ExecuteActivity> context)
+        {
+            Console.WriteLine("Doing activity: {0}", context.Message.ActivityId);
             return Task.CompletedTask;
         }
     }

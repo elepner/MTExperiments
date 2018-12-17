@@ -19,6 +19,8 @@ namespace MTExperiments
         public const string TenantId = "Some_test_tenant_id";
         static async Task Main(string[] args)
         {
+            //Uri hostUri = null;
+            string address = null;
             var builder = new HostBuilder()
                 .ConfigureAppConfiguration(
                     (configurationBuilder => { configurationBuilder.AddEnvironmentVariables(); }))
@@ -32,6 +34,9 @@ namespace MTExperiments
                         var host = cfg.Host(busConnectionString, hostConfiguration => { });
                         host.CreateConventionalCommandMapping<ChangeCaseCommand>();
                         host.CreateConventionalCommandMapping<TerminateCommand>();
+                        host.CreateConventionalCommandMapping<ScheduledCommand>();
+
+                        address = host.Address.ToString();
                         cfg.ConfigurePublish(configurator =>
                         {
                             configurator.UseSendExecute(context =>
@@ -40,6 +45,7 @@ namespace MTExperiments
                             });
                         });
 
+                        cfg.UseServiceBusMessageScheduler();
                         cfg.ConfigureSend(configurator =>
                         {
                             configurator.UseSendExecute(context =>
@@ -47,18 +53,21 @@ namespace MTExperiments
                                 context.Headers.Set(MassTransitExtensions.TENANT_ID_KEY, TenantId);
                             });
                         });
+                        
                     }));
 
                     serviceCollection.AddSingleton<IPublishEndpoint>(provider => provider.GetService<IBusControl>());
                     serviceCollection.AddSingleton<ISendEndpointProvider>(provider => provider.GetService<IBusControl>());
+                    
                 });
             
-
+            
 
             var config = builder.Build();
             var sendEndpointProvider = config.Services.GetService<ISendEndpointProvider>();
             var publishEndpoint = config.Services.GetService<IPublishEndpoint>();
             var busControl = config.Services.GetService<IBusControl>();
+            
             await busControl.StartAsync();
             Console.WriteLine("Enter ';' if you want to finish");
             while (true)
@@ -87,6 +96,25 @@ namespace MTExperiments
                         B = "Value B",
                         SomeValue = "Some value from B"
                     });
+                    continue;
+                }
+
+                if (line.ToLower() == "s")
+                {
+                    var scheduledCommand = new ScheduledCommandImpl {ExecutedIn = 30, IsReallyScheduled = false};
+                    await sendEndpointProvider.Send<ScheduledCommand>(scheduledCommand);
+                    scheduledCommand.IsReallyScheduled = true;
+                    var jobId = await publishEndpoint.ScheduleSend<ScheduledCommand>(new Uri(MassTransitExtensions.BuildConventionalAddress<ScheduledCommand>(address)), DateTime.UtcNow.AddSeconds(30),
+                        scheduledCommand);
+                    await publishEndpoint.ScheduleSend<ScheduledCommand>(new Uri(MassTransitExtensions.BuildConventionalAddress<ScheduledCommand>(address)), DateTime.UtcNow.AddHours(30),
+                        scheduledCommand);
+                    //await publishEndpoint.ScheduleSend<ExecuteActivity>(new Uri("ScheduledCommand", UriKind.Relative), DateTime.UtcNow.AddSeconds(45),
+                    //    new ExecuteActivityImpl
+                    //    {
+                    //        ActivityId = "ABCD"
+                    //    });
+
+
                     continue;
                 }
 
