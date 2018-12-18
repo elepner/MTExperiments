@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using GreenPipes;
 using GreenPipes.Specifications;
 using MassTransit;
+using MassTransit.Scheduling;
 
 
 namespace MTUtils
@@ -70,6 +72,19 @@ namespace MTUtils
             });
         }
 
-        
+        public static Task<ScheduledMessage<T>> ScheduleSendConventional<T>(this ConsumeContext context, TimeSpan delay,
+            T message, CancellationToken cancellationToken = default(CancellationToken)) where T : class
+        {
+            var destAddress = EndpointConvention.TryGetDestinationAddress<T>(out var desAddress);
+            if (!destAddress)
+            {
+                throw new Exception("Mapping is not found");
+            }
+            return context.ScheduleSend(
+                desAddress,
+                TimeSpan.FromSeconds(10), message, cancellationToken);
+        }
+
+
     }
 }

@@ -11,11 +11,12 @@ namespace MTExperiments.Consumer
 
         public async Task Consume(ConsumeContext<ChangeCaseCommand> context)
         {
-            if (Count++ % 4 == 0)
+            if (context.Message.IsScheduled)
             {
-                throw new Exception("Cannot change case so often!!");
+                Console.WriteLine("This change case command is scheduled.");
             }
-
+            
+            
             string message = context.Message.Text;
             string result = "";
             foreach (char c in message)
@@ -38,11 +39,11 @@ namespace MTExperiments.Consumer
                 //Console.Write(toPrint);
             }
             Console.WriteLine(result);
-
-            await context.Publish<AnotherThingHappened>(new AnotherThing
-            {
-                AnotherThingType = $"Changed case from {context.Message.Text} to {result}"
-            });
+            if (!context.Message.IsScheduled)
+                await context.Publish<AnotherThingHappened>(new AnotherThing
+                {
+                    AnotherThingType = $"Changed case from {context.Message.Text} to {result}"
+                });
         }
     }
 

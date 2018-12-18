@@ -28,10 +28,11 @@ namespace MTExperiments.AnotherConsumer
                         string busConnectionString = hostingContext.Configuration["MY_TEST_ASB"];
                         
                         var host = cfg.Host(busConnectionString, hostConfiguration => { });
-                        host.CreateConventionalCommandMapping<ScheduledCommand>();
+                        //host.CreateConventionalCommandMapping<ScheduledCommand>();
                         cfg.UseServiceBusMessageScheduler();
                         ConfigureBusEndpoints(cfg, provider, host);
-                        
+                        host.CreateConventionalCommandMapping<ChangeCaseCommand>();
+
                     }));
                 });
 
@@ -68,25 +69,23 @@ namespace MTExperiments.AnotherConsumer
             
             cfg.ReceiveEndpoint(host, queueName: "AnotherSubscirber2", configure: configurator =>
             {
-                configurator.Handler<ObjectCreatedB>(context =>
+                configurator.Handler<ObjectCreatedB>(async context =>
                 {
                     Console.WriteLine("Another subscirber, object b created");
-                    context.SchedulePublish<ScheduledCommand>(TimeSpan.FromSeconds(30), new ScheduledCommandImpl
+                    await context.SchedulePublish<ScheduledCommand>(TimeSpan.FromSeconds(30), new ScheduledCommandImpl
                     {
                         ExecutedIn = 30, IsReallyScheduled = true
                     });
-
                     
-                    return Task.CompletedTask;
+                    ChangeCaseCommand changeCase = new ChangeCaseCommandImpl
+                    {
+                        IsScheduled = true,
+                        Text = "Hello world"
+                    };
+
+                    await context.ScheduleSendConventional(TimeSpan.FromSeconds(15), changeCase);
                 });
             });
-
-            //cfg.ReceiveEndpoint(host, "ScheduledCommand", configurator =>
-            //{
-            //    configurator.Consumer<ExecuteActivityCommandHandler>();
-            //});
-
-            
 
             cfg.CreateConventionalCommandHandlerEndpoint<DoAnotherThingCommandHandler, DoAnotherThingCommand>(provider);
 

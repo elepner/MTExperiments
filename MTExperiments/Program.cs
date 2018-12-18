@@ -104,10 +104,10 @@ namespace MTExperiments
                     var scheduledCommand = new ScheduledCommandImpl {ExecutedIn = 30, IsReallyScheduled = false};
                     await sendEndpointProvider.Send<ScheduledCommand>(scheduledCommand);
                     scheduledCommand.IsReallyScheduled = true;
-                    var jobId = await publishEndpoint.ScheduleSend<ScheduledCommand>(new Uri(MassTransitExtensions.BuildConventionalAddress<ScheduledCommand>(address)), DateTime.UtcNow.AddSeconds(30),
-                        scheduledCommand);
-                    await publishEndpoint.ScheduleSend<ScheduledCommand>(new Uri(MassTransitExtensions.BuildConventionalAddress<ScheduledCommand>(address)), DateTime.UtcNow.AddHours(30),
-                        scheduledCommand);
+                    //var jobId = await publishEndpoint.ScheduleSend<ScheduledCommand>(new Uri(MassTransitExtensions.BuildConventionalAddress<ScheduledCommand>(address)), DateTime.UtcNow.AddSeconds(30),
+                    //    scheduledCommand);
+                    //await publishEndpoint.ScheduleSend<ScheduledCommand>(new Uri(MassTransitExtensions.BuildConventionalAddress<ScheduledCommand>(address)), DateTime.UtcNow.AddHours(30),
+                    //    scheduledCommand);
                     //await publishEndpoint.ScheduleSend<ExecuteActivity>(new Uri("ScheduledCommand", UriKind.Relative), DateTime.UtcNow.AddSeconds(45),
                     //    new ExecuteActivityImpl
                     //    {
